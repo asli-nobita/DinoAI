@@ -11,15 +11,31 @@ In many cases, we would want to include a "time aspect" to this reward situation
 `reward = r_i + α*r_(i+1) + (α^2)*r_(i+2) + ...`  
 where `r_i` is the reward of the `i`th state. 
 ### Policy  
-The policy is a series of actions that, according to the model, is optimal to get the best reward.  
+The policy is a series of actions that the model takes. An optimal policy is that series of actions which, given a state, will yield the best possible reward. 
 ### Q-value function / state action value function `Q(s,a)` 
 The Q-value is function with two parameters, a state s and action a. It is defined by the reward gained if you start in state s, take the action a once, and then behave optimally after that. 
 What does behaving optimally mean here?  
 Suppose we start from state 5. We can either go right straight to state 6 for the 40 reward, or keep going left to state 1 for the 100 reward. If there's no discount, then clearly going left is the way to go since we get a larger reward. If we do consider a discount rate, however, we need to calculate the discounted reward for each of these paths. Assuming a discount rate of `0.5`, the rewards for each of these paths are:  
 * Going right to 6: `r = 0 + 0.5*40 = 20`
-* Going left to 1: `r = 0 + 0.5*0 + 0.5^2*0 + 0.5^3*0 + 0.5^4*100 = 6.67`
+* Going left to 1: `r = 0 + 0.5*0 + 0.5^2*0 + 0.5^3*0 + 0.5^4*100 = 6.25`
 We can see that moving right is the optimal action in this case. This is what is meant by moving optimally.
 
-Now that we figured out the optimal policy for state 5, we can find out the Q-value Q(s,a) for s = 6 and a = left or right. Q(6,left) is equal to moving left from state 6 to state 5, and then 
+Now that we figured out the optimal policy for state 5, we can find out the Q-value Q(s,a) for s = 5 and a = left or right. Q(5,left) is equal to moving left from state 5 to state 4, and then moving optimally from there. First we find the optimal path from state 4:  
+* left to 1: `r = 0 + 0.5*0 + 0.5^2*0 + 0.5^3*100 = 12.5`
+* right to 6: `r = 0 + 0.5*0 + 0.5^2*40 = 10`
+So the optimal path from state 4 is moving left to 1. Now we can calculate Q(5,left):
+`Q(5, left) = 0 + 0.5*0 + 0.5^2*0 + 0.5^3*0 + 0.5^4*100 = 6.25`
+and Q(5, right):
+`Q(5, right) = 0 + 0.5*40 = 20`
+Q(5, right) is greater than Q(5, left). Thus the optimal policy from state 5 is to move right to 6.
+Note that the optimal policy and the Q value depend on the rewards assigned to each state and also the discount rate. If the reward for state 6 was 10 for example, the optimal policy would be to go left to 1 even at state 5.
+### Bellman equation  
+The Bellman equation is the most important equation in RL. It states that, for a discount rate α,  
+`Q(s,a) = R(s) + α*max(Q(s',a')`  
+that is, the Q-value of state s with action a is equal to the reward assigned to state s + α times the maximum possible Q-value at s', the state reached upon by performing action a from state s, that can be achieved using a possible action a'. In our mars rover example, max(Q(5,a')) is 20 for a'=right. The maximum value of Q function is also the maximum reward achievable from that state.  
 ## Description of the project  
 This project is very suitable as a beginner level project in RL, as it is relatively easy to implement in the short time frame I had, yet covers all the basics of RL - creating a custom environment, implementing the reward system, application of computer vision, training the model through a deep Q-learning neural network (DQN) and testing it. I learnt a lot from the project and gained some idea of what we can do using RL algorithms. Some other applications of RL could be in designing a rover or a drone to navigate terrain, or in algorithmic trading systems to identify good trades. I hope to take on such projects in the future.
+### Creating the environment  
+I had to create a custom environment to play the Chrome dino game, using the `Box` method from the **Gymnasium** library. I used **mss** to capture screenshots of a small region just in front of the dino, scaled the resolution down and converted the image to greyscale, using **OpenCV**. Since I needed a way to signal to the model when a run ended and it had reached the game over screen, I captured the 'GAME OVER' text and performed OCR on the image using **pytesseract** library, passing the extracted text to a method in the environment class and checking the text contained the word 'GAME'. I arbitrarily assigned a reward value of 1 for each frame the agent stays alive.  
+### Training the model  
+The model was trained using a DQN from **stable-baselines3** to learn the Q values. 
